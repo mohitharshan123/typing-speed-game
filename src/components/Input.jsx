@@ -11,22 +11,41 @@ import randomWords from "random-words";
 import { textReducer } from "../reducers/textReducer";
 import ChristmasLogo from "../assets/christmas.svg";
 import Snowman from "../assets/snowman.jpg";
+import database from "../firebase";
+import {
+  onSnapshot,
+  collection,
+  query,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
+import { toast, ToastContainer } from "react-toastify";
 
 const Input = () => {
   const [randomText, dispatch] = useReducer(textReducer, []);
   const textContainer = useRef();
   const [secondsRemaining, setSecondsRemaining] = useState(60);
   const [gameStarted, setGameStarted] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isScorePopupOpen, setIsScorePopupOpen] = useState(false);
   const [inputText, setInputText] = useState("");
   const [speed, setSpeed] = useState(0);
   const [accuracy, setAccuracy] = useState(0);
+  const [topScore, setTopScore] = useState(null);
+  const [isNewHighScore, setIsNewHighScore] = useState(false);
+  const [playerName, setPlayerName] = useState();
+  const [docId, setDocId] = useState("");
 
   let textRefs = [];
 
   useEffect(() => {
     if (secondsRemaining === 0) {
-      setIsOpen(true);
+      if (
+        speed * (accuracy / 100) >
+        topScore.speed * (topScore.accuracy / 100)
+      ) {
+        setIsNewHighScore(true);
+      }
+      setIsScorePopupOpen(true);
       setGameStarted(false);
       calculateSpeedAndAccuracy();
     }
@@ -40,8 +59,41 @@ const Input = () => {
     return () => clearInterval(timer);
   }, [secondsRemaining, gameStarted]);
 
+  const TopScorer = ({ playerInfo: { player, speed, accuracy } }) => (
+    <div className="flex flex-col w-full h-full space-y-3 ">
+      <p className="font-semibold">Top Score</p>
+      <p className="font-semibold">{player}</p>
+      <div className="flex flex-row space-x-10">
+        <div className="flex flex-col space-y-3 ">
+          <p className="font-light">Speed</p>
+          <div className="bg-indigo-500 shadow-lg p-3 text-white rounded-full shadow-indigo-500/50">
+            {speed} WPM
+          </div>
+        </div>
+
+        <div className="flex flex-col space-y-3 ">
+          <p className="font-light">Accuracy</p>
+          <div className="bg-indigo-500 shadow-lg p-3 text-white rounded-full shadow-indigo-500/50">
+            {accuracy} %
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   useEffect(() => {
     loadText();
+    const q = query(collection(database, "topscore"));
+    onSnapshot(q, (querySnapshot) => {
+      setDocId(querySnapshot.docs[0].id);
+      setTopScore(querySnapshot.docs[0].data());
+      toast(<TopScorer playerInfo={querySnapshot.docs[0].data()} />, {
+        closeButton: false,
+        closeOnClick: false,
+        autoClose: false,
+        position: "bottom-right",
+      });
+    });
   }, []);
 
   const loadText = () => {
@@ -62,11 +114,18 @@ const Input = () => {
   };
 
   const handlePlayAgain = () => {
-    setIsOpen(false);
+    setIsScorePopupOpen(false);
     loadText();
     setSecondsRemaining(60);
     setInputText("");
     textContainer.current.scrollLeft = 0;
+  };
+
+  const updateHighScore = () => {
+    const newTopScorer = doc(database, "topscore", docId);
+    const newPlayerDetails = { player: playerName, speed, accuracy };
+    updateDoc(newTopScorer, newPlayerDetails);
+    setIsScorePopupOpen(false);
   };
 
   const handleKeyDown = (key, index) => {
@@ -132,11 +191,11 @@ const Input = () => {
         placeholder="Start Typing..."
         className="bg-transparent text-3xl px-4 font-medium	text-amber-400  rounded-full ring-offset-2 ring font-mono ring-blue-500 scroll-smooth whitespace-nowrap absolute w-3/4 overflow-scroll h-20 "
       ></input>
-      <Transition appear show={isOpen} as={Fragment}>
+      <Transition appear show={isScorePopupOpen} as={Fragment}>
         <Dialog
           as="div"
           className="fixed inset-0 z-10 overflow-y-auto w-full flex flex-col h-50"
-          onClose={() => setIsOpen(false)}
+          onClose={() => setIsScorePopupOpen(false)}
         >
           <div className="min-h-screen px-4 text-center w-full">
             <Transition.Child
@@ -171,17 +230,38 @@ const Input = () => {
                 >
                   <img src={Snowman} className="h-96 mb-10" />
                 </Dialog.Title>
-                <div className="flex h-full flex-row w-full justify-between items-center   space-x-20 mb-10">
-                  <div className="flex flex-col space-y-3 items-center">
-                    <p className="font-bold">Speed</p>
-                    <div className="rounded-full text-6xl text-white w-full bg-indigo-500 shadow-lg p-10 shadow-indigo-500/50">
-                      {speed} WPM
+                <div className="flex flex-col items-center m-3 h-full">
+                  {isNewHighScore && (
+                    <div className="font-bold m-3 flex flex-col space-y-3 h-full">
+                      <p>Congratulations!!! Thats a new high score!</p>
+                      <input
+                        onChange={({ target: { value } }) =>
+                          setPlayerName(value)
+                        }
+                        placeholder="Enter your name"
+                        className="border border-blue-200 h-full w-full p-3 rounded-md"
+                      />
+                      <button
+                        onClick={updateHighScore}
+                        className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                      >
+                        Save
+                      </button>
                     </div>
-                  </div>
-                  <div className="flex flex-col space-y-3 items-center">
-                    <p className="font-bold">Accuracy</p>
-                    <div className="rounded-full text-6xl text-white w-full bg-indigo-500 shadow-lg p-10 shadow-indigo-500/50">
-                      {accuracy}%
+                  )}
+
+                  <div className="flex h-full flex-row w-full justify-between items-center   space-x-20 mb-10">
+                    <div className="flex flex-col space-y-3 items-center">
+                      <p className="font-bold">Speed</p>
+                      <div className="rounded-full text-6xl text-white w-full bg-indigo-500 shadow-lg p-10 shadow-indigo-500/50">
+                        {speed} WPM
+                      </div>
+                    </div>
+                    <div className="flex flex-col space-y-3 items-center">
+                      <p className="font-bold">Accuracy</p>
+                      <div className="rounded-full text-6xl text-white w-full bg-indigo-500 shadow-lg p-10 shadow-indigo-500/50">
+                        {accuracy}%
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -200,6 +280,7 @@ const Input = () => {
           </div>
         </Dialog>
       </Transition>
+      <ToastContainer />
     </>
   );
 };
