@@ -175,7 +175,7 @@ const Input = () => {
               ? "text-amber-300"
               : secondsRemaining > 10
               ? "text-amber-700"
-              : "text-amber-800"
+              : "text-red-800"
           }`}
         >
           {secondsRemaining}
