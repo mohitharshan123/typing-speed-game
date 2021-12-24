@@ -168,14 +168,14 @@ const Input = () => {
       <img src={ChristmasLogo} className="opacity-40 px-3" alt="Christmas" />
       <div className="h-20 w-1/4 absolute flex flex-col items-center justify-center top-5 bg-transparent border-dotted border-4 border-cyan-400">
         <p
-          className={`h-full m-auto text-center text-6xl font-medium text-amber-${
+          className={`h-full m-auto text-center text-6xl font-medium ${
             secondsRemaining > 40
-              ? "200"
+              ? "text-amber-200"
               : secondsRemaining > 30
-              ? "300"
+              ? "text-amber-300"
               : secondsRemaining > 10
-              ? "700"
-              : "800"
+              ? "text-amber-700"
+              : "text-amber-800"
           }`}
         >
           {secondsRemaining}
