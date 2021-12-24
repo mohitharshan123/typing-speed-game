@@ -45,7 +45,9 @@ const Input = () => {
     const attemptedCount = randomText.filter(
       ({ attempted }) => attempted
     ).length;
-    setAccuracy(Math.floor((correctEntriesCount / attemptedCount) * 100));
+
+    const accuracy = Math.floor((correctEntriesCount / attemptedCount) * 100);
+    setAccuracy(accuracy > 0 ? accuracy : 0);
   }, [randomText]);
 
   useEffect(() => {
