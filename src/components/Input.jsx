@@ -174,8 +174,8 @@ const Input = () => {
               : secondsRemaining > 30
               ? "300"
               : secondsRemaining > 10
-              ? "400"
-              : "900"
+              ? "700"
+              : "800"
           }`}
         >
           {secondsRemaining}
