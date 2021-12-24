@@ -49,6 +49,17 @@ const Input = () => {
   }, [randomText]);
 
   useEffect(() => {
+    let timer =
+      secondsRemaining > 0 &&
+      gameStarted &&
+      setInterval(() => {
+        setSecondsRemaining((secondsRemaining) => secondsRemaining - 1);
+      }, 1000);
+
+    return () => clearInterval(timer);
+  }, [secondsRemaining, gameStarted]);
+
+  useEffect(() => {
     if (secondsRemaining === 0) {
       if (
         speed * (accuracy / 100) >
@@ -60,14 +71,6 @@ const Input = () => {
       setGameStarted(false);
       calculateSpeedAndAccuracy();
     }
-    let timer =
-      secondsRemaining > 0 &&
-      gameStarted &&
-      setInterval(() => {
-        setSecondsRemaining((secondsRemaining) => secondsRemaining - 1);
-      }, 1000);
-
-    return () => clearInterval(timer);
   }, [
     secondsRemaining,
     gameStarted,
