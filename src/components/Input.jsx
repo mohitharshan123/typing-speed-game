@@ -132,7 +132,7 @@ const Input = () => {
     if (key === " ") setSpeed((speed) => speed + 1);
     setGameStarted(true);
     dispatch({ type: "ATTEMPTED", payload: index });
-    if (randomText[index].letter !== key) {
+    if (randomText[index]?.letter !== key) {
       dispatch({ type: "INCORRECT", payload: index });
     } else {
       textContainer.current.scrollLeft += 15;
@@ -155,7 +155,17 @@ const Input = () => {
     <>
       <img src={ChristmasLogo} className="opacity-40 px-3" alt="Christmas" />
       <div className="h-20 w-1/4 absolute flex flex-col items-center justify-center top-5 bg-transparent border-dotted border-4 border-cyan-400">
-        <p className="h-full m-auto text-center text-6xl font-medium text-amber-500">
+        <p
+          className={`h-full m-auto text-center text-6xl font-medium text-amber-${
+            secondsRemaining > 40
+              ? "200"
+              : secondsRemaining > 30
+              ? "300"
+              : secondsRemaining > 10
+              ? "400"
+              : "900"
+          }`}
+        >
           {secondsRemaining}
         </p>
       </div>
