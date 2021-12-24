@@ -4,6 +4,7 @@ import React, {
   useReducer,
   useState,
   Fragment,
+  useCallback,
 } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 
@@ -37,6 +38,16 @@ const Input = () => {
 
   let textRefs = [];
 
+  const calculateSpeedAndAccuracy = useCallback(() => {
+    const correctEntriesCount = randomText.filter(
+      ({ correct }) => correct
+    ).length;
+    const attemptedCount = randomText.filter(
+      ({ attempted }) => attempted
+    ).length;
+    setAccuracy(Math.floor((correctEntriesCount / attemptedCount) * 100));
+  }, [randomText]);
+
   useEffect(() => {
     if (secondsRemaining === 0) {
       if (
@@ -57,7 +68,15 @@ const Input = () => {
       }, 1000);
 
     return () => clearInterval(timer);
-  }, [secondsRemaining, gameStarted]);
+  }, [
+    secondsRemaining,
+    gameStarted,
+    accuracy,
+    speed,
+    topScore?.accuracy,
+    topScore?.speed,
+    calculateSpeedAndAccuracy,
+  ]);
 
   const TopScorer = ({ playerInfo: { player, speed, accuracy } }) => (
     <div className="flex flex-col w-full h-full space-y-3 ">
@@ -139,16 +158,6 @@ const Input = () => {
       dispatch({ type: "CORRECT", payload: index });
     }
     textRefs[index]?.scrollIntoView({ behaviour: "smooth", block: "end" });
-  };
-
-  const calculateSpeedAndAccuracy = () => {
-    const correctEntriesCount = randomText.filter(
-      ({ correct }) => correct
-    ).length;
-    const attemptedCount = randomText.filter(
-      ({ attempted }) => attempted
-    ).length;
-    setAccuracy(Math.floor((correctEntriesCount / attemptedCount) * 100));
   };
 
   return (
@@ -238,7 +247,7 @@ const Input = () => {
                   as="h3"
                   className="text-lg font-medium leading-6 items-center flex justify-center text-gray-900"
                 >
-                  <img src={Snowman} className="h-96 mb-10" />
+                  <img src={Snowman} className="h-96 mb-10" alt="Snowman" />
                 </Dialog.Title>
                 <div className="flex flex-col items-center m-3 h-full">
                   {isNewHighScore && (
